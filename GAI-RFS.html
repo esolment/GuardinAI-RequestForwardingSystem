@@ -346,10 +346,10 @@ code .comment {
     <header>
         <h1>Guardin AI</h1>
     </header>
-    <button class="reload_button"><img src="25274.png" onclick="window.location.reload();" width="30px"></button>
+    <button class="reload_button"><img src="25274.png" onclick="reload()" width="30px"></button>
 
     <main id="chat">
-        <p class="description-text-ab-ai" id="description-text">Guardin AI – Бесплатный ИИ-помощник для Obsidian: быстрые и точные ответы на все ваши вопросы.</p>
+        <p class="description-text-ab-ai" id="description-text">Инициализация...<br>подождите</p>
         <!-- Сообщения чата -->
     </main>
 
@@ -359,9 +359,14 @@ code .comment {
     </footer>
 
     <script>
-        var ai_work_m = 1;
+        var ai_work_m = 0;
         var first_message = 0;
         var data;
+
+        setTimeout(function() {
+            ai_work_m = 1;
+            document.getElementById("description-text").innerHTML = "Guardin AI – Бесплатный ИИ-помощник для Obsidian: быстрые и точные ответы на все ваши вопросы.";
+        }, 5000);
 
 // Функция для добавления HTML-кода в конец определенного тега div
 function addSpinner(divId) {
@@ -500,7 +505,13 @@ function removeSpinner(divId) {
             chat.appendChild(messageDiv);
             chat.scrollTop = chat.scrollHeight; // Прокрутка вниз
         }
-        
+        function reload() {
+            data = "reboot";
+            sendData();
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        }
     setInterval(() => {
         if (ai_work_m == 0) {
             var textareaElement = document.getElementById("secretServiceAnswerButton");
