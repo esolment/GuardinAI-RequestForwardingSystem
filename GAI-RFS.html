@@ -3,25 +3,493 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Отправка данных</title>
-    <script>
-        function sendData() {
-            const data = { variable: "Ваши данные" };
+    <title>Guardin AI Chat</title>
+    <style>
+        @import "compass/css3";
 
+body {
+  background: #333;
+}
+
+    @keyframes opacity-anim-oon {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+.spinner {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 50px;
+  top: 10px;
+  left: 20px;
+  animation: opacity-anim-oon 0.6s ease 1;
+  @include transform(translate(-50%, -50%));
+  
+  .blob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    @include transform(translate(-50%, -50%));
+    border: 2px solid #fff;
+    
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    
+    &.top {
+      top: 0;
+      animation: blob-top 1s infinite ease-in;
+    }
+    &.bottom {
+      top: 100%;
+       animation: blob-bottom 1s infinite ease-in;
+    }
+    &.left {
+      left: 0;
+      animation: blob-left 1s infinite ease-in;
+    }
+  }
+  
+  .move-blob {
+    background: #fff;
+    top: 0;
+    
+    animation: blob-spinner-mover 1s infinite ease-in;
+  }
+}
+
+@keyframes blob-bottom {
+  25%, 50%, 75% {
+    top: 50%;
+    left: 100%;
+  }
+  100% {
+    top: 0;
+    left: 50%;
+  }
+}
+@keyframes blob-left {
+  25% {
+    top: 50%;
+    left: 0;
+  }
+  50%, 100% {
+    top: 100%;
+    left: 50%;
+  }
+}
+@keyframes blob-top {
+  50% {
+    top: 0;
+    left: 50%;
+  }
+  75%, 100% {
+    top: 50%;
+    left: 0;
+  }
+}
+
+@keyframes blob-spinner-mover {
+  0%, 100% {
+    top: 0;
+    left: 50%;
+  }
+  25% {
+    top: 50%;
+    left: 100%;
+  }
+  50% {
+    top: 100%;
+    left: 50%;
+  }
+  75% {
+    top: 50%;
+    left: 0;
+  }
+}
+       body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #E0E0E0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+header {
+    background-color: #1F1F1F;
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #333;
+}
+header h1 {
+    margin: 0;
+    font-size: 1.5em;
+
+    /* Fallback: Set a background color. */
+    background-color: red;
+
+    /* Create the gradient. */
+    background-image: linear-gradient(45deg, #f3ec78, #af4261);
+
+    /* Set the background size and repeat properties. */
+    background-size: 100%;
+    background-repeat: repeat;
+
+    /* Use the text as a mask for the background. */
+    /* This will show the gradient as a text color rather than element bg. */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; 
+    -moz-background-clip: text;
+    -moz-text-fill-color: transparent;
+}
+main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+.message-ai {
+    padding: 1px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    max-width: 90%;
+    animation: new-message-notification 2s ease-in-out 1;
+}
+.message-user {
+    padding: 1px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    max-width: 70%;
+    animation: new-message-notification 0.5s ease-in-out 1;
+}
+@keyframes new-message-notification {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+.message-ai.ai {
+    background-color: #1e1e1e00;
+    text-align: left;
+}
+.message-user.user {
+    background-color: #333;
+    text-align: left;
+    margin-left: auto;
+    padding-left: 11px;
+}
+footer {
+    background-color: #1F1F1F;
+    padding: 10px;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+}
+input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    resize: none;
+    background-color: #333;
+    color: #E0E0E0;
+    transition: all 0.3s ease;
+    outline: none;
+}
+input:focus {
+    background-color: #444;
+}
+button {
+    margin-left: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #6200EE;
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+button:disabled {
+    background-color: #444;
+    cursor: not-allowed;
+}
+button:hover:not(:disabled) {
+    background-color: #7200FF;
+}
+.message-text-user {
+    margin-right: 30px;
+    font-size: 20px;
+}
+.message-text-ai {
+    margin-left: 0px;
+    font-size: 19px;
+    word-spacing: 2px;
+}
+.sc-bBABsx.camJud,
+.sc-jmpzUR.cfetIB,
+.sc-EJAja.gTUZZW {
+    margin-left: 0px;
+    font-size: 19px;
+    word-spacing: 2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+.sc-jcMfQk.grNUaU {
+    display: none;
+}
+.description-text-ab-ai {
+    color: white;
+    font-size: 20px;
+    word-spacing: 2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 70%;
+}
+.description-text-ab-ai-anim {
+    color: white;
+    font-size: 20px;
+    word-spacing: 2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 70%;
+    animation: hedojiskrfk 300ms ease-in-out 1;
+}
+@keyframes hedojiskrfk {
+    from {
+        filter: blur(0px);
+        opacity: 1;
+        top: 20%;
+    } to {
+        fill: blur(50px);
+        opacity: 0;
+        top: -5%;
+    }
+}
+/* Стилизация тега <code> */
+    code {
+    display: inline-block;
+    background-color: #f4f4f4;
+    color: #d63384;
+    font-family: Consolas, "Courier New", monospace;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* Пример для блочного кода */
+pre code {
+    display: block;
+    padding: 10px;
+    margin: 0 0 10px;
+    overflow: auto;
+    background-color: #272822;
+    color: #f8f8f2;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Пример для выделения синтаксиса */
+code .keyword {
+    color: #66d9ef;
+}
+
+code .string {
+    color: #e6db74;
+}
+
+code .comment {
+    color: #75715e;
+}
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Guardin AI</h1>
+    </header>
+
+    <main id="chat">
+        <p class="description-text-ab-ai" id="description-text">Guardin AI – Бесплатный ИИ-помощник для Obsidian: быстрые и точные ответы на все ваши вопросы.</p>
+        <!-- Сообщения чата -->
+    </main>
+
+    <footer>
+        <input id="secretServiceAnswer" placeholder="Напишите сообщение...">
+        <button onclick="sendDataByButton()" id="secretServiceAnswerButton" disabled>Отправить</button>
+    </footer>
+
+    <script>
+        var ai_work_m = 1;
+        var first_message = 0;
+        var data;
+
+// Функция для добавления HTML-кода в конец определенного тега div
+function addSpinner(divId) {
+    // HTML-код для добавления
+    const spinnerHtml = `
+        <div class="spinner">
+            <div class="blob top"></div>
+            <div class="blob bottom"></div>
+            <div class="blob left"></div>
+            <div class="blob move-blob"></div>
+        </div>
+    `;
+
+    // Получаем элемент div по его id
+    const divElement = document.getElementById(divId);
+
+    // Проверяем, существует ли элемент
+    if (divElement) {
+        // Добавляем HTML-код в конец div
+        divElement.insertAdjacentHTML('beforeend', spinnerHtml);
+    } else {
+        console.log(`Элемент с id "${divId}" не найден.`);
+    }
+}
+
+// Функция для удаления элемента spinner из определенного тега div
+function removeSpinner(divId) {
+    // Получаем элемент div по его id
+    const divElement = document.getElementById(divId);
+
+    // Проверяем, существует ли элемент
+    if (divElement) {
+        // Находим элемент с классом spinner внутри div
+        const spinnerElement = divElement.querySelector('.spinner');
+        if (spinnerElement) {
+            // Удаляем элемент spinner
+            spinnerElement.remove();
+        } else {
+            console.log('Элемент spinner не найден.');
+        }
+    } else {
+        console.log(`Элемент с id "${divId}" не найден.`);
+    }
+}
+        function replaceKillWord(text) {
+    const gigachatRegex = /gigachat/gi; // Регулярное выражение для поиска слова gigachat в любом регистре
+    const sberRegex = /сбер|sber/gi; // Регулярное выражение для поиска слова Сбер или Sber в любом регистре
+
+    let replacedText = text.replace(gigachatRegex, 'Guardian');
+    replacedText = replacedText.replace(sberRegex, 'Solment');
+
+    return replacedText;
+}
+
+
+        function sendData() {
             fetch('http://localhost:5000/receive', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ message: data })
             })
             .then(response => response.json())
-            .then(data => console.log('Ответ от сервера:', data))
+            .then(data => {
+                console.log('Ответ от сервера:', data);
+                removeSpinner('chat');
+                displayMessage(data.message, 'ai');
+            })
             .catch(error => console.error('Ошибка:', error));
         }
+
+        function sendDataByButton() {
+            if (ai_work_m == 0) {
+                console.log('block send');
+            } else if (ai_work_m == 1) {
+                ai_work_m = 0; // block send
+                data = document.getElementById("secretServiceAnswer").value;
+                displayMessage(data, 'user');
+                document.getElementById("secretServiceAnswer").value = ''; // Очистка textarea
+                checkInputTextarea(); // Перепроверка состояния кнопки
+                sendData(); // Отправка данных
+                // Пример использования функции
+                addSpinner('chat'); // Замените 'exampleDiv' на id вашего div
+                chat.scrollTop = chat.scrollHeight; // Прокрутка вниз
+                document.getElementById("secretServiceAnswer").focus();
+            }
+        }
+
+        function checkInputTextarea() {
+            var textarea = document.getElementById("secretServiceAnswer").value;
+            var textareaElement = document.getElementById("secretServiceAnswerButton");
+            if (textarea.trim() === "") {
+                textareaElement.setAttribute("disabled", "disabled");
+            } else {
+                textareaElement.removeAttribute("disabled");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const inputField = document.getElementById('secretServiceAnswer');
+
+            inputField.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Предотвращаем стандартное поведение Enter
+                    var textarea = document.getElementById("secretServiceAnswer").value;
+                    if (textarea.trim() !== "") {
+                        sendDataByButton();
+                    }
+                }
+            });
+
+            inputField.addEventListener('input', checkInputTextarea);
+        });
+
+        function displayMessage(messageer, sender) {
+            if (first_message == 0) {
+                document.getElementById('description-text').setAttribute('class', 'description-text-ab-ai-anim');
+                setTimeout(() => {
+                    document.getElementById('description-text').style.display = 'none';
+                }, 280);
+            }
+            first_message = 1;
+            const chat = document.getElementById('chat');
+            const messageDiv = document.createElement('div');
+            message = replaceKillWord(messageer);
+            if (sender == 'ai') {
+                messageDiv.classList.add('message-ai', sender);
+                ai_work_m = 1;
+            } else if (sender == 'user') {
+                messageDiv.classList.add('message-user', sender);
+            } else {
+                console.log('sender error');
+            }
+            messageDiv.innerHTML = `<p class="message-text-${sender}">${message}</p>`;
+            chat.appendChild(messageDiv);
+            chat.scrollTop = chat.scrollHeight; // Прокрутка вниз
+        }
+        
+    setInterval(() => {
+        if (ai_work_m == 0) {
+            var textareaElement = document.getElementById("secretServiceAnswerButton");
+            textareaElement.setAttribute("disabled", "disabled");
+        } else {
+            
+        }
+    }, 500);
     </script>
-</head>
-<body>
-    <button onclick="sendData()">Отправить данные</button>
 </body>
 </html>
