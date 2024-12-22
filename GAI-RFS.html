@@ -210,7 +210,7 @@ textarea {
 input:focus {
     background-color: #444;
 }
-button {
+button.oio {
     margin-left: 10px;
     padding: 10px;
     border: none;
@@ -220,11 +220,11 @@ button {
     cursor: pointer;
     transition: all 0.3s ease;
 }
-button:disabled {
+button.oio:disabled {
     background-color: #444;
     cursor: not-allowed;
 }
-button:hover:not(:disabled) {
+button.oio:hover:not(:disabled) {
     background-color: #7200FF;
 }
 .message-text-user {
@@ -324,7 +324,20 @@ code .string {
 code .comment {
     color: #75715e;
 }
-
+.reload_button {
+    position: fixed;
+    top: 10px;
+    left: 5px;
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    background-color: transparent;
+    border: none;
+    border-radius: 50%;
+}
+.reload_button:hover {
+    background-color: #0000003a;
+}
     </style>
 </head>
 <body>
@@ -332,6 +345,7 @@ code .comment {
     <header>
         <h1>Guardin AI</h1>
     </header>
+    <button class="reload_button"><img src="25274.png" onclick="window.location.reload();" width="30px"></button>
 
     <main id="chat">
         <p class="description-text-ab-ai" id="description-text">Guardin AI – Бесплатный ИИ-помощник для Obsidian: быстрые и точные ответы на все ваши вопросы.</p>
@@ -340,7 +354,7 @@ code .comment {
 
     <footer>
         <textarea id="secretServiceAnswer" placeholder="Напишите сообщение..."></textarea>
-        <button onclick="sendDataByButton()" id="secretServiceAnswerButton" disabled>Отправить</button>
+        <button onclick="sendDataByButton()" id="secretServiceAnswerButton" class="oio" disabled>Отправить</button>
     </footer>
 
     <script>
