@@ -321,7 +321,7 @@ code .comment {
 .reload_button {
     position: fixed;
     top: 16px;
-    right: 20px;
+    left: 10px;
     width: 30px;
     height: 30px;
     margin: 0;
@@ -360,6 +360,7 @@ main {
     flex: 1;
     overflow-y: auto;
     padding: 10px;
+    overflow-x: hidden;
 }
 /* Настройка ширины полосы прокрутки */
 main::-webkit-scrollbar {
@@ -402,7 +403,7 @@ nav {
 	background-color: transparent;
     position: fixed;
     top: -50px;
-    left: 0;
+    right: 0px;
     border-radius: 12px;
 }
 
@@ -417,7 +418,6 @@ nav ul li {
 	display:inline-block;
 	background-color: #1e1e1e;
 	}
-
 nav a {
 	display:block;
 	padding:0 10px;	
@@ -450,6 +450,7 @@ nav ul ul li {
 	float:none;
 	display:list-item;
 	position: relative;
+    left: -120px;
 }
 
 /* Second, Third and more Tiers	*/
@@ -458,6 +459,10 @@ nav ul ul ul li {
 	top:-60px; 
 	left:170px;
 }
+
+
+/* Change this in order to change the Dropdown symbol */
+li > a:only-child:after { content: ''; }
 .sodkfe {
     font-family: "Nunito", serif;
     color: white;
@@ -465,10 +470,6 @@ nav ul ul ul li {
     position: relative;
     top: -5px;
 }
-
-	
-/* Change this in order to change the Dropdown symbol */
-li > a:only-child:after { content: ''; }
     </style>
 </head>
 <body>
@@ -477,22 +478,23 @@ li > a:only-child:after { content: ''; }
         <h1>Guardin AI</h1><span id="AI-model" class="sodkfe">Инициализация...</span>
         <nav>
             <ul>
-                    <li><a href="#">AI</a>
+                <li><a href="#">Модель</a>
                     <!-- Second Tier Drop Down -->
                     <ul>
                         <li><a href="#">First server</a>
                             <!-- Third Tier Drop Down -->
                             <ul>
-                                <li><a onclick="selectModel(serve1GPT4OmniMini, serve1GPT4OmniMiniName)">GPT-4o mini</a></li>
+                                <li style="position: relative; left: -170px;"><a onclick="selectModel(serve1GPT4OmniMini, serve1GPT4OmniMiniName)">GPT-4o mini</a></li>
                             </ul>
                         </li>
                         <li><a href="#">Second server</a>
                             <!-- Third Tier Drop Down -->
                             <ul>
-                                <li><a onclick="selectModel(serve2GigaChatAI, serve2GigaChatAIName)">GigaChat AI</a></li>
+                                <li style="position: relative; left: -170px;"><a onclick="selectModel(serve2GigaChatAI, serve2GigaChatAIName)">GigaChat AI</a></li>
                             </ul>
                         </li>
                     </ul>
+                </li>
             </ul>
         </nav>
     </header>
