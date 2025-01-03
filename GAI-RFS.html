@@ -398,15 +398,22 @@ textarea::-webkit-scrollbar-track {
   background-color: #f0f0f0; /* Цвет фона полосы прокрутки */
   border-radius: 5px; /* Радиус скругления углов */
 }
-nav {
+select {
 	margin: 50px 0;
 	background-color: transparent;
     position: fixed;
     top: -50px;
     right: 0px;
     border-radius: 12px;
+    background-color: #1e1e1e;
+    display:block;
+	padding:0 10px;	
+	color:#FFF;
+	font-size:20px;
+	line-height: 60px;
+	text-decoration:none;
+    height: 60px;
 }
-
 nav ul {
 	padding: 0;
   margin: 0;
@@ -470,33 +477,35 @@ li > a:only-child:after { content: ''; }
     position: relative;
     top: -5px;
 }
+button[title="Copy code"] {
+    color: white;
+    background: #121212;
+    border-radius: 10px;
+    border: solid white 1px;
+    height: 40px;
+    font-size: 14px;
+    padding-bottom: 10px;
+    width: 120px;
+    margin-right: 4px;
+}
+button[title="Copy code"]:hover {
+    background: #404040;
+}
+svg {
+    position: relative;
+    top: 5px;
+}
     </style>
 </head>
 <body>
     <p class="description-text-ab-ai" id="description-text">Инициализация...<br>подождите</p>
     <header>
         <h1>Guardin AI</h1><span id="AI-model" class="sodkfe">Инициализация...</span>
-        <nav>
-            <ul>
-                <li><a href="#">Модель</a>
-                    <!-- Second Tier Drop Down -->
-                    <ul>
-                        <li><a href="#">First server</a>
-                            <!-- Third Tier Drop Down -->
-                            <ul>
-                                <li style="position: relative; left: -170px;"><a onclick="selectModel(serve1GPT4OmniMini, serve1GPT4OmniMiniName)">GPT-4o mini</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="#">Second server</a>
-                            <!-- Third Tier Drop Down -->
-                            <ul>
-                                <li style="position: relative; left: -170px;"><a onclick="selectModel(serve2GigaChatAI, serve2GigaChatAIName)">GigaChat AI</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
+        <select id="mySelect">
+            <option value="1">Модель</option>
+            <option value="2">GPT-4o mini</option>
+            <option value="3">GigaChat AI</option>
+        </select>
     </header>
     <button class="reload_button"><img src="25274.png" onclick="reload()" width="30px"></button>
 
@@ -510,6 +519,89 @@ li > a:only-child:after { content: ''; }
     </footer>
 
     <script>
+// Функция для скачивания текста
+function downloadText() {
+    // Находим все элементы pre, содержащие code, и выбираем последний
+    const allPreWithCode = document.querySelectorAll('pre code');
+    const lastCodeInPre = allPreWithCode[allPreWithCode.length - 1];
+    
+    if (!lastCodeInPre) {
+        console.error('Элемент code внутри pre не найден.');
+        return;
+    }
+
+    const text = lastCodeInPre.textContent || lastCodeInPre.innerText;
+
+    // Создаем ссылку для скачивания
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+    link.download = 'text.txt';
+
+    // Имитируем клик по ссылке для начала загрузки
+    link.click();
+
+    // Освобождаем память
+    URL.revokeObjectURL(link.href);
+}
+
+// Функция для копирования текста в буфер обмена
+function copyToClipboard() {
+    // Находим все элементы pre, содержащие code, и выбираем последний
+    const allPreWithCode = document.querySelectorAll('pre code');
+    const lastCodeInPre = allPreWithCode[allPreWithCode.length - 1];
+    
+    if (!lastCodeInPre) {
+        console.error('Элемент code внутри pre не найден.');
+        return;
+    }
+
+    const textToCopy = lastCodeInPre.textContent.trim();
+
+    navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+            console.log('Текст скопирован в буфер обмена.');
+        })
+        .catch(err => {
+            console.error('Не удалось скопировать текст:', err);
+        });
+}
+        document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', (event) => {
+                const target = event.target;
+                
+                // Проверяем, является ли целевой элемент нашей кнопкой
+                if (target.matches('button[title="Copy code"]')) {
+                    const buttons = document.querySelectorAll('button[title="Copy code"]');
+                    
+                    // Индекс текущей кнопки среди всех кнопок
+                    let index = Array.from(buttons).indexOf(target);
+                    
+                    // Если текущая кнопка предпоследняя
+                    if (index === buttons.length - 2) {
+                        downloadText();
+                    }
+                    // Если текущая кнопка последняя
+                    else if (index === buttons.length - 1) {
+                        copyToClipboard();
+                    }
+                }
+            });
+        });
+    
+        document.getElementById('mySelect').addEventListener('change', function(event) {
+    const selectedValue = event.target.value;
+    
+    switch (selectedValue) {
+        case '2':
+            selectModel(serve1GPT4OmniMini, serve1GPT4OmniMiniName)
+            break;
+        case '3':
+            selectModel(serve2GigaChatAI, serve2GigaChatAIName)
+            break;
+        default:
+            console.log("Неизвестная опция");
+    }
+});
         var selectedServer;
         // servers and AI name
         // first server
@@ -524,11 +616,12 @@ li > a:only-child:after { content: ''; }
         var first_message = 0;
         var data;
         function scrollDown() {
-  document.querySelector('.main').scrollBy({
-    top: 100,
-    behavior: 'smooth'
-  });
-}
+            var element = document.getElementById('chat');
+            element.scrollTo({
+    top: element.scrollTop + 500,
+    behavior: 'smooth' // Добавляем плавность прокрутки (необязательно)
+});    
+        }
         setTimeout(function() {
             ai_work_m = 0;
             document.getElementById("description-text").innerHTML = "Guardin AI – Бесплатный ИИ-помощник для Obsidian: быстрые и точные ответы на все ваши вопросы.";
