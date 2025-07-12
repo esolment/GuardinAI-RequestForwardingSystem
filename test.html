@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speechpad Browser Version</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #recbtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            background-color: #4CAF50;
+        }
+        #recbtn.recording {
+            background-color: rgb(255, 165, 0);
+        }
+        #preview {
+            min-height: 60px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        #docel {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        .status {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        .settings {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Speechpad Browser Version</h1>
+    
+    <div class="settings">
+        <h3>Настройки распознавания:</h3>
+        <div>
+            <label>
+                <input type="checkbox" id="requireAssistantName"> Требовать имя ассистента
+            </label>
+        </div>
+        <div>
+            <label>
+                Имена ассистента (через запятую):
+                <input type="text" id="assistantNames" value="ассистент, орбита, компьютер">
+            </label>
+        </div>
+        <div>
+            <label>
+                Макс. длина текста перед очисткой:
+                <input type="number" id="maxTextLength" value="3500">
+            </label>
+        </div>
+        <div>
+            <label>
+                Таймаут неактивности (сек):
+                <input type="number" id="inactivityTimeout" value="6">
+            </label>
+        </div>
+    </div>
+    
+    <button id="recbtn">Начать запись</button>
+    <div id="preview"></div>
+    <textarea id="docel" placeholder="Здесь будет появляться распознанный текст..."></textarea>
+    <div id="status" class="status">Готов к записи</div>
+
+    <script>
+        // Конфигурационные переменные
+        const config = {
+            requireAssistantName: false, // Требуется ли имя ассистента для активации
+            assistantNames: ['ассистент', 'орбита', 'компьютер'], // Имена для активации
+            maxTextLength: 3500, // Максимальная длина текста перед очисткой
+            inactivityTimeout: 6.0, // Таймаут неактивности в секундах
+            recognizedRefreshRate: 0.05, // Частота проверки новых данных (сек)
+            inactivityClearTimeout: 10 // Через сколько секунд очищать при переполнении
+        };
+
+        // Элементы DOM
+        const recbtn = document.getElementById('recbtn');
+        const preview = document.getElementById('preview');
+        const docel = document.getElementById('docel');
+        const status = document.getElementById('status');
+        const requireAssistantCheckbox = document.getElementById('requireAssistantName');
+        const assistantNamesInput = document.getElementById('assistantNames');
+        const maxTextLengthInput = document.getElementById('maxTextLength');
+        const inactivityTimeoutInput = document.getElementById('inactivityTimeout');
+
+        // Состояние приложения
+        let recognition;
+        let isRecording = false;
+        let finalTranscript = '';
+        let interimTranscript = '';
+        let microphoneAccessGranted = false;
+        let restartTimeout;
+        let inactivityTimer;
+        let activationRequired = config.requireAssistantName;
+        let recognizedText = null;
+        let lastActivationTime = Date.now() / 1000;
+
+        // Инициализация при загрузке страницы
+        function init() {
+            // Загрузка значений из полей ввода
+            requireAssistantCheckbox.checked = config.requireAssistantName;
+            assistantNamesInput.value = config.assistantNames.join(', ');
+            maxTextLengthInput.value = config.maxTextLength;
+            inactivityTimeoutInput.value = config.inactivityTimeout;
+            
+            // Назначение обработчиков изменений
+            requireAssistantCheckbox.addEventListener('change', updateConfig);
+            assistantNamesInput.addEventListener('change', updateConfig);
+            maxTextLengthInput.addEventListener('change', updateConfig);
+            inactivityTimeoutInput.addEventListener('change', updateConfig);
+            
+            // Проверка поддержки Web Speech API
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                status.textContent = 'Ваш браузер не поддерживает распознавание речи. Попробуйте Chrome или Edge.';
+                recbtn.disabled = true;
+                return;
+            }
+            
+            // Создаем объект распознавания речи
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'ru-RU';
+
+            // Настройка обработчиков событий
+            setupRecognitionHandlers();
+            
+            // Автоматический старт распознавания
+            startRecording();
+            
+            // Запуск цикла обработки распознанного текста
+            recognizeLoop();
+        }
+
+        // Обновление конфигурации из полей ввода
+        function updateConfig() {
+            config.requireAssistantName = requireAssistantCheckbox.checked;
+            config.assistantNames = assistantNamesInput.value.split(',').map(name => name.trim());
+            config.maxTextLength = parseInt(maxTextLengthInput.value);
+            config.inactivityTimeout = parseFloat(inactivityTimeoutInput.value);
+            
+            // Обновляем состояние активации
+            activationRequired = config.requireAssistantName;
+            resetInactivityTimer();
+        }
+
+        // Настройка обработчиков событий распознавания
+        function setupRecognitionHandlers() {
+            recognition.onstart = function() {
+                status.textContent = 'Запись начата... Говорите.';
+                isRecording = true;
+                recbtn.textContent = 'Остановить запись';
+                recbtn.classList.add('recording');
+                microphoneAccessGranted = true;
+            };
+
+            recognition.onend = function() {
+                if (isRecording && microphoneAccessGranted) {
+                    restartTimeout = setTimeout(() => {
+                        try {
+                            recognition.start();
+                        } catch(e) {
+                            console.error('Ошибка при перезапуске:', e);
+                            stopRecording();
+                        }
+                    }, 300);
+                }
+            };
+
+            recognition.onresult = function(event) {
+                interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript.trim();
+                    
+                    if (event.results[i].isFinal && transcript) {
+                        finalTranscript += transcript + ' ';
+                        docel.value += transcript + ' ';
+                        preview.textContent = '';
+                    } else if (transcript) {
+                        interimTranscript += transcript;
+                        preview.textContent = interimTranscript;
+                    }
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Ошибка распознавания:', event.error);
+                
+                if (event.error === 'not-allowed') {
+                    microphoneAccessGranted = false;
+                    status.textContent = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.';
+                    stopRecording();
+                } else if (event.error === 'no-speech') {
+                    status.textContent = 'Готов к записи... Говорите.';
+                } else {
+                    status.textContent = 'Ошибка: ' + event.error;
+                }
+            };
+        }
+
+        // Функции управления записью
+        function startRecording() {
+            finalTranscript = '';
+            interimTranscript = '';
+            
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error('Ошибка запуска:', e);
+                status.textContent = 'Ошибка запуска распознавания. Попробуйте снова.';
+                microphoneAccessGranted = false;
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            clearTimeout(restartTimeout);
+            try {
+                recognition.stop();
+            } catch (e) {
+                console.error('Ошибка остановки:', e);
+            }
+            status.textContent = 'Запись остановлена';
+            recbtn.textContent = 'Начать запись';
+            recbtn.classList.remove('recording');
+            
+            if (interimTranscript) {
+                docel.value += interimTranscript + ' ';
+                preview.textContent = '';
+            }
+        }
+
+        // Таймер неактивности
+        function resetInactivityTimer() {
+            if (!config.requireAssistantName) return;
+            
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+            }
+            
+            inactivityTimer = setTimeout(onInactivityTimeout, config.inactivityTimeout * 1000);
+        }
+
+        function onInactivityTimeout() {
+            if (config.requireAssistantName) {
+                activationRequired = true;
+                console.log('Таймер истёк. Требуется имя ассистента.');
+            }
+        }
+
+        // Поиск ключевых слов в тексте
+        function findAfterAnyKeyword(text, keywords) {
+            for (const keyword of keywords) {
+                const index = text.toLowerCase().indexOf(keyword.toLowerCase());
+                if (index !== -1) {
+                    return text.slice(index);
+                }
+            }
+            return null;
+        }
+
+        // Основной цикл обработки распознанного текста
+        function recognizeLoop() {
+            let lastValue = '';
+            
+            function process() {
+                const currentValue = docel.value;
+                
+                // Очистка при переполнении
+                if (currentValue.length > config.maxTextLength && 
+                    (Date.now() / 1000 - lastActivationTime) > config.inactivityClearTimeout) {
+                    docel.value = '';
+                    lastValue = '';
+                    return;
+                }
+
+                if (currentValue !== lastValue) {
+                    lastValue = currentValue;
+                    
+                    // Режим с требованием имени ассистента
+                    if (config.requireAssistantName) {
+                        if (activationRequired) {
+                            const recognized = findAfterAnyKeyword(currentValue, config.assistantNames);
+                            if (recognized) {
+                                recognizedText = recognized;
+                                activationRequired = false;
+                                lastActivationTime = Date.now() / 1000;
+                                resetInactivityTimer();
+                                console.log('Распознано:', recognizedText);
+                                docel.value = '';
+                            }
+                        } else if (currentValue.trim()) {
+                            recognizedText = currentValue;
+                            lastActivationTime = Date.now() / 1000;
+                            resetInactivityTimer();
+                            console.log('Распознано:', recognizedText);
+                            docel.value = '';
+                        }
+                    } 
+                    // Режим без требования имени
+                    else if (currentValue.trim()) {
+                        recognizedText = currentValue;
+                        console.log('Распознано:', recognizedText);
+                        docel.value = '';
+                    }
+                }
+                
+                setTimeout(process, config.recognizedRefreshRate * 1000);
+            }
+            
+            process();
+        }
+
+        // Обработчик клика по кнопке
+        recbtn.addEventListener('click', function() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
+        // Автоматическая остановка при закрытии страницы
+        window.addEventListener('beforeunload', function() {
+            stopRecording();
+        });
+
+        // Запуск приложения
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
