@@ -161,6 +161,13 @@
             recognizeLoop();
         }
 
+        // Отправка распознанного текста
+        function sendRecognized(text) {
+            console.log(text)
+
+            alert(text);
+        }
+
         // Обновление конфигурации из полей ввода
         function updateConfig() {
             config.requireAssistantName = requireAssistantCheckbox.checked;
@@ -316,21 +323,21 @@
                                 activationRequired = false;
                                 lastActivationTime = Date.now() / 1000;
                                 resetInactivityTimer();
-                                console.log('Распознано:', recognizedText);
+                                sendRecognized(recognizedText);
                                 docel.value = '';
                             }
                         } else if (currentValue.trim()) {
                             recognizedText = currentValue;
                             lastActivationTime = Date.now() / 1000;
                             resetInactivityTimer();
-                            console.log('Распознано:', recognizedText);
+                            sendRecognized(recognizedText);
                             docel.value = '';
                         }
                     } 
                     // Режим без требования имени
                     else if (currentValue.trim()) {
                         recognizedText = currentValue;
-                        console.log('Распознано:', recognizedText);
+                        sendRecognized(recognizedText);
                         docel.value = '';
                     }
                 }
