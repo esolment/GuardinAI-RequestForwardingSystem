@@ -1,93 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Фиксированный компас (правый карман)</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            touch-action: manipulation;
-            user-select: none;
-        }
-        #compass-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            margin: 20px auto;
-            border: 2px solid #333;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-        #compass-rose {
-            width: 100%;
-            height: 100%;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="black"/><text x="50" y="15" text-anchor="middle" fill="red">N</text><text x="85" y="53" text-anchor="middle">E</text><text x="50" y="90" text-anchor="middle">S</text><text x="15" y="53" text-anchor="middle">W</text></svg>') no-repeat center;
-            background-size: contain;
-        }
-        #front-indicator {
-            position: absolute;
-            top: 50%;
-            right: 10px;
-            width: 40px;
-            height: 40px;
-            margin-top: -20px;
-            background-color: red;
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-            z-index: 10;
-            transform: rotate(90deg);
-        }
-        #debug {
-            margin-top: 20px;
-            font-family: monospace;
-        }
-    </style>
+    <title>Компас с ожиданием значения</title>
 </head>
 <body>
-    <h1>Фиксированный компас</h1>
-    <p>Направление "перед" всегда справа (как в правом кармане)</p>
-    
-    <div id="compass-container">
-        <div id="compass-rose"></div>
-        <div id="front-indicator"></div>
-    </div>
-    
-    <div id="debug">Ожидание данных датчиков...</div>
-    
+    <button onclick="getCompassDirection().then(dir => alert('Направление: ' + dir))">
+        Получить направление
+    </button>
+
     <script>
-        // Фиксированный угол для "правого кармана" (90 градусов - справа)
-        const fixedFrontAngle = 90;
-        
-        // Обработка данных датчиков
-        if (window.DeviceOrientationEvent) {
-            window.addEventListener('deviceorientation', (event) => {
-                if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
-                    const alpha = event.alpha; // 0-360° (компас)
-                    const beta = event.beta;   // -180-180° (наклон вперед/назад)
-                    const gamma = event.gamma; // -90-90° (наклон влево/вправо)
-                    
-                    // Вычисляем направление с фиксированным "передом" справа
-                    let direction = (360 - alpha + fixedFrontAngle + 360) % 360;
-                    
-                    // Поворачиваем компасную розу
-                    document.getElementById('compass-rose').style.transform = `rotate(${-direction}deg)`;
-                    
-                    // Отладочная информация
-                    document.getElementById('debug').innerHTML = `
-                        Абсолютный азимут: ${alpha.toFixed(1)}°<br>
-                        Наклон вперед/назад: ${beta.toFixed(1)}°<br>
-                        Наклон влево/вправо: ${gamma.toFixed(1)}°<br>
-                        Фиксированный "перед": справа (90°)<br>
-                        Фактическое направление: ${direction.toFixed(1)}°
-                    `;
+        /**
+         * Ждёт, пока появится значение компаса (без фиксированного таймаута)
+         * @returns {Promise<string>} Направление в градусах (например, "90°")
+         */
+        function getCompassDirection() {
+            return new Promise((resolve, reject) => {
+                if (!window.DeviceOrientationEvent || typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    reject("Ваш браузер не поддерживает компас или требует разрешения (iOS)");
+                    return;
                 }
+
+                // Обработчик события ориентации
+                const handleOrientation = (event) => {
+                    if (event.alpha !== null) {
+                        // Удаляем обработчик, чтобы не слушать дальше
+                        window.removeEventListener('deviceorientation', handleOrientation);
+                        // Возвращаем округлённое значение (0° - 360°)
+                        resolve(Math.round(event.alpha) + "°");
+                    }
+                };
+
+                // Подписываемся на событие
+                window.addEventListener('deviceorientation', handleOrientation);
+
+                // Дополнительно: отмена, если долго нет ответа (опционально)
+                const timeoutId = setTimeout(() => {
+                    window.removeEventListener('deviceorientation', handleOrientation);
+                    reject("Не удалось получить данные компаса (таймаут)");
+                }, 5000); // Макс. время ожидания (можно убрать, если не нужно)
+
+                // Очистка таймаута при успешном ответе
+                Promise.resolve().then(() => clearTimeout(timeoutId)).catch(() => {});
             });
-        } else {
-            document.getElementById('debug').textContent = 
-                "Ваше устройство или браузер не поддерживают необходимые датчики.";
         }
     </script>
 </body>
